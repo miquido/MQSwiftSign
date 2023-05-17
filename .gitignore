@@ -1,0 +1,24 @@
+.DS_Store
+._*
+.AppleDB
+.AppleDesktop
+Temporary Items
+.apdisk
+Packages
+.build/
+DerivedData/
+xcuserdata/
+Package.resolved
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/*.xctestplan
+!*.xcworkspace/contents.xcworkspacedata
+**/xcshareddata/WorkspaceSettings.xcsettings
+*.xcresult/
+*.ipa/
+*.xcarchive/
+.idea
+.toolsCache/
+.vscode/
+.swiftpm

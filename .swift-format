@@ -1,0 +1,28 @@
+{
+    "version": 1,
+    "lineLength": 120,
+    "indentation": {
+        "tabs": 1
+    },
+    "tabWidth": 4,
+    "maximumBlankLines": 1,
+    "lineBreakAroundMultilineExpressionChainComponents": true,
+    "respectsExistingLineBreaks": true,
+    "lineBreakBeforeControlFlowKeywords": false,
+    "lineBreakBeforeEachArgument": false,
+    "lineBreakBeforeEachGenericRequirement": false,
+    "spacesAroundRangeFormationOperators": false,
+    "rules": {
+        "AlwaysUseLowerCamelCase": true,
+        "AmbiguousTrailingClosureOverload" : true,
+        "DoNotUseSemicolons": true,
+        "GroupNumericLiterals" : true,
+        "NeverForceUnwrap" : true,
+        "NeverUseForceTry" : true,
+        "NeverUseImplicitlyUnwrappedOptionals" : true,
+        "NoAccessLevelOnExtensionDeclaration" : false,
+        "NoParensAroundConditions" : true,
+        "NoVoidReturnOnFunctionSignature" : true,
+        "OrderedImports" : true
+    }
+}
