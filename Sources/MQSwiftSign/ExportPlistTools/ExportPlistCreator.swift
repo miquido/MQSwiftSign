@@ -1,4 +1,23 @@
 import Foundation
+import MQDo
+
+
+struct PlistCreator {
+	var create: () throws -> Void
+
+	struct Context {
+		var distributionMethod: DistributionMethod
+		var shellScript: String
+	}
+}
+
+extension PlistCreator: DisposableFeature {
+	static var placeholder: PlistCreator {
+		PlistCreator(
+			create: unimplemented0()
+		)
+	}
+}
 
 internal struct ExportOptionsPlist {
 	private(set) var properties: Dictionary<ExportPlistOption, Any>
@@ -28,16 +47,16 @@ internal enum ExportPlistOption: String {
 	case method
 }
 
-internal struct ExportPlistCreator {
+struct ExportPlistCreator: ImplementationOfDisposableFeature {
 	private let buildCommand: BuildCommand
 	private let distributionMethod: DistributionMethod
 
-	init(distributionMethod: DistributionMethod, shellScript: String) {
-		self.buildCommand = BuildCommandParser.from(shellScript: shellScript)
-		self.distributionMethod = distributionMethod
+	init(with context: PlistCreator.Context, using _: Features) throws {
+		self.buildCommand = BuildCommandParser.from(shellScript: context.shellScript)
+		self.distributionMethod = context.distributionMethod
 	}
 
-	internal func createExportPlist() throws {
+	func createExportPlist() throws {
 		let projectParser: ProjectParser = ProjectParser(
 			options: buildCommand.commandOptions,
 			distributionMethod: distributionMethod)
@@ -47,10 +66,13 @@ internal struct ExportPlistCreator {
 		exportOptions.setDistributionMethod(distributionMethod.rawValue)
 		try saveExportPlist(exportOptions)
 	}
+
+	var instance: PlistCreator {
+		.init(create: createExportPlist)
+	}
 }
 
 private extension ExportPlistCreator {
-
 	private func saveExportPlist(_ content: ExportOptionsPlist) throws {
 		Logger.info("Saving export plist.")
 		let exportOptionPlistUrl: URL = URL(
@@ -61,6 +83,6 @@ private extension ExportPlistCreator {
 		let exportOptionsPlistContentData: Data = try PropertyListSerialization.data(
 			fromPropertyList: content.convertKeysToRawTypes(), format: .xml, options: 0)
 		try exportOptionsPlistContentData.write(to: exportOptionPlistUrl)
-		Logger.info("Export plist saved at path: \(buildCommand.exportPlistPath).")
+		Logger.successInfo("Export plist saved at path: \(buildCommand.exportPlistPath).")
 	}
 }

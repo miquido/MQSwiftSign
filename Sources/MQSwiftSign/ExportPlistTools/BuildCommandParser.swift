@@ -1,4 +1,7 @@
 import Foundation
+import RegexBuilder
+
+internal typealias BuildCommandRegex = Regex<(Substring, BuildCommandOption, String)>
 
 internal struct BuildCommandParser {
 	static func from(shellScript: String) -> BuildCommand {
@@ -11,8 +14,7 @@ internal struct BuildCommandParser {
 
 internal protocol BuildCommand {
 	var exportPlistPath: String { get }
-	var commandOptionsSearchRegexp: String { get }
-	var commandOptionsSeparator: Character { get }
+	var commandOptionsSearchRegexp: BuildCommandRegex { get }
 	var commandOptions: BuildCommandOptions { get }
 
 	init(shellScript: String)
@@ -21,13 +23,28 @@ internal protocol BuildCommand {
 internal struct FlutterBuildCommand: BuildCommand {
 	internal var exportPlistPath: String
 	internal var commandOptions: BuildCommandOptions
-
-	internal var commandOptionsSearchRegexp: String = #"--[^&|\s]*"#
-	internal var commandOptionsSeparator: Character = "="
+	internal var commandOptionsSearchRegexp: BuildCommandRegex = Regex {
+		TryCapture {
+			ChoiceOf {
+				"--export-options-plist"
+			}
+		} transform: {
+			BuildCommandOption(rawValue: String($0))
+		}
+		"="
+		Capture {
+			OneOrMore(CharacterClass(.word, .anyOf("./\\")))
+			ZeroOrMore {
+				Optionally(CharacterClass(.whitespace, .anyOf("-./")))
+				OneOrMore(.word)
+			}
+		} transform: {
+			String($0)
+		}
+	}
 
 	init(shellScript: String) {
-		var options = shellScript.extractExportOptions(
-			using: commandOptionsSearchRegexp, and: commandOptionsSeparator)
+		var options = shellScript.extractExportOptions(using: commandOptionsSearchRegexp)
 		// flutter build command does not provide project nor scheme nor target, but always uses "Runner" instead - so we can hardcode it
 		options[.projectPath] = "./ios/Runner.xcodeproj"
 		options[.schemeName] = "Runner"
@@ -49,13 +66,34 @@ internal struct FlutterBuildCommand: BuildCommand {
 internal struct IosBuildCommand: BuildCommand {
 	internal var exportPlistPath: String
 	internal var commandOptions: BuildCommandOptions
-
-	internal var commandOptionsSearchRegexp: String = #"-[^-&\s|]*\s(([^-&|]*[\s][^&\s-|]+)|([^-&][^\s]+))?"#
-	internal var commandOptionsSeparator: Character = " "
+	internal var commandOptionsSearchRegexp: BuildCommandRegex = Regex {
+		TryCapture {
+			ChoiceOf {
+				"-target"
+				"-configuration"
+				"-exportOptionsPlist"
+				"-scheme"
+				"-workspace"
+				"-project"
+				"-sdk"
+			}
+		} transform: {
+			BuildCommandOption(rawValue: String($0))
+		}
+		OneOrMore(.whitespace)
+		Capture {
+			OneOrMore(CharacterClass(.word, .anyOf("./\\")))
+			ZeroOrMore {
+				Optionally(CharacterClass(.whitespace, .anyOf("-./")))
+				OneOrMore(.word)
+			}
+		} transform: {
+			String($0)
+		}
+	}
 
 	internal init(shellScript: String) {
-		self.commandOptions = shellScript.extractExportOptions(
-			using: commandOptionsSearchRegexp, and: commandOptionsSeparator)
+		self.commandOptions = shellScript.extractExportOptions(using: commandOptionsSearchRegexp)
 		guard let exportPlistPath = commandOptions[.exportPlistPath] else {
 			let defaultPath = "./ExportOptionsPlists/exportOption.plist"
 			Logger.info(
@@ -70,29 +108,14 @@ internal struct IosBuildCommand: BuildCommand {
 }
 
 private extension String {
-	func extractExportOptions(using regexp: String, and separator: Character) -> BuildCommandOptions {
-		let parameters = self.getSubstrings(matching: regexp)
-		return parameters.reduce(into: BuildCommandOptions()) { partialResult, parameter in
-			let substrings = parameter.split(separator: separator).map { String($0) }
-			guard let option = BuildCommandOption(rawValue: substrings[0]) else { return }
-			partialResult[option] = substrings[1..<substrings.count].joined(separator: " ")
-				.replacingOccurrences(of: "\\ ", with: " ")
-		}
-	}
-
-	func getSubstrings(matching pattern: String) -> [String] {
-		do {
-			let regex = try NSRegularExpression(pattern: pattern)
-			let textRange = self.startIndex..<self.endIndex
-			let range = NSRange(textRange, in: self)
-			let matchingResult = regex.matches(in: self, range: range)
-			let matchedStrings: [String] = matchingResult.compactMap {
-				guard let currentRange = Range($0.range, in: self) else { return nil }
-				return String(self[currentRange])
+	func extractExportOptions(using regexp: BuildCommandRegex) -> BuildCommandOptions {
+		var options = BuildCommandOptions()
+		self.matches(of: regexp)
+			.forEach { match in
+				let (_, option, value) = match.output
+				options[option] = String(value).trimmingCharacters(in: CharacterSet(charactersIn: " "))
+					.replacingOccurrences(of: "\\", with: "")
 			}
-			return matchedStrings
-		} catch {
-			return []
-		}
+		return options
 	}
 }

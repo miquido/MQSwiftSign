@@ -1,5 +1,6 @@
 import Foundation
 import MQTagged
+import RegexBuilder
 
 internal enum ConfigurationNameTag {}
 internal typealias ConfigurationName = Tagged<String, ConfigurationNameTag>
@@ -17,7 +18,9 @@ internal enum CodeSignStyleTag {}
 internal typealias CodeSignStyle = Tagged<String, CodeSignStyleTag>
 
 internal struct BundleID: PatternValidator {
-	var pattern = #"^[a-z0-9_\.]+$"#
+	var pattern: Regex<Substring> = Regex {
+		OneOrMore(CharacterClass(.word, .digit, .anyOf("_\\.")))
+	}
 	var value: String
 }
 
@@ -61,9 +64,9 @@ internal struct ConfigurationObjectBuildSettings {
 		self.platformSpecifier =
 			properties["PROVISIONING_PROFILE_SPECIFIER[sdk=\(platform ?? "iphoneos")*]"] as? String
 		self.genericDevelopmentTeam = (properties["DEVELOPMENT_TEAM"] as? String).nilIfEmpty
-		self.platformDevelopmentTeam = properties["DEVELOPMENT_TEAM[sdk=\(platform ?? "iphoneos")*]"] as? String
+        self.platformDevelopmentTeam = (properties["DEVELOPMENT_TEAM[sdk=\(platform ?? "iphoneos")*]"] as? String).nilIfEmpty
 		self.genericIdentity = (properties["CODE_SIGN_IDENTITY"] as? String).nilIfEmpty
-		self.platformIdentity = properties["CODE_SIGN_IDENTITY[sdk=\(platform ?? "iphoneos")*]"] as? String
+		self.platformIdentity = (properties["CODE_SIGN_IDENTITY[sdk=\(platform ?? "iphoneos")*]"] as? String).nilIfEmpty
 		self.codeSigningStyle = (properties["CODE_SIGN_STYLE"] as? String ?? "Manual")?.lowercased()
 		self.codeSigningEntitlements = properties["CODE_SIGN_ENTITLEMENTS"] as? String
 	}
@@ -91,11 +94,11 @@ internal extension ConfigurationObjectBuildSettings {
 	}
 
 	var developmentTeam: DevelopmentTeam? {
-		return (genericDevelopmentTeam ?? platformDevelopmentTeam).map({ .init(rawValue: $0) })
+		return (platformDevelopmentTeam ?? genericDevelopmentTeam).map({ .init(rawValue: $0) })
 	}
 
 	var codesignIdentity: CodeSignIdentity? {
-		return (genericIdentity ?? platformIdentity).map({ .init(rawValue: $0) })
+		return (platformIdentity ?? genericIdentity).map({ .init(rawValue: $0) })
 	}
 
 	var codesignStyle: CodeSignStyle? {
@@ -107,8 +110,8 @@ internal extension ConfigurationObjectBuildSettings {
 			let iCloudContainerEnvironment: ICloudContainerEnvironment = try? EntitlementsFile(path: path)
 				.getICloudContainerEnvironment()
 		else {
-			Logger.info(
-				"⚠️ iCloudContainerEnvironment was not found. If you use CloudKit in your project, please provide this property in .entitlements file. In case not using CloudKit, the warning can be safely omitted."
+			Logger.warning(
+				"iCloudContainerEnvironment was not found. If you use CloudKit in your project, please provide this property in .entitlements file. In case not using CloudKit, the warning can be safely omitted."
 			)
 			return nil
 		}

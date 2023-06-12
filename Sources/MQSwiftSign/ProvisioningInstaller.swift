@@ -1,17 +1,77 @@
 import Foundation
+import MQDo
+import RegexBuilder
 
-internal enum ProvisioningInstaller {}
+internal struct ProvisioningInstaller {
+	var install: (String, FileSearcher) throws -> Void
+}
+
+internal extension ProvisioningInstaller {
+	func install(from directoryPath: String, using uuidSearcher: FileSearcher) throws {
+		try install(directoryPath, uuidSearcher)
+	}
+
+	private func createProvisioningUrl(path: String) throws -> URL {
+		do {
+			let currentDirectory = FileManager.default.currentDirectoryPath
+			return try URL(path: currentDirectory + "/\(path)")
+		} catch {
+			throw
+			NoSuchFile.error(
+					message: "File not found at given path",
+					possibleReasons: [.wrongProvisioningPath],
+					displayableMessage: "File doesn't exist"
+				)
+				.with(path, for: "Provisioning path")
+		}
+	}
+}
+
+extension ProvisioningInstaller: DisposableFeature {
+	static var placeholder: ProvisioningInstaller {
+		ProvisioningInstaller(
+			install: unimplemented2()
+		)
+	}
+}
+
+extension ProvisioningInstaller {
+	static func system() -> FeatureLoader {
+		.disposable { _ in
+			ProvisioningInstaller(
+				install: { directoryPath, uuidSearcher in
+					let filesDirUrl = try createProvisioningUrl(path: directoryPath)
+					let files = try FileManager.default.contentsOfDirectory(
+						at: filesDirUrl, includingPropertiesForKeys: nil)
+					let provisioningFiles = files.filter {
+						$0.pathExtension == "mobileprovision"
+					}
+					let targetDirectory = FileManager.default.getProvisioningsTargetDirectory()
+					for provisioningFile in provisioningFiles {
+						let uuid = try uuidSearcher.search(in: provisioningFile)
+						let targetFilePath = targetDirectory + uuid + ".mobileprovision"
+						try FileManager.default.createDirIfNotExists(targetDirectory)
+						try FileManager.default.removeFileIfExist(at: targetFilePath)
+						try FileManager.default.copyItem(at: provisioningFile, to: URL(fileURLWithPath: targetFilePath))
+						Logger.info("Found and installed provisioning profile \(provisioningFile) with UUID: \(uuid)")
+					}
+				}
+			)
+		}
+	}
+}
+
 
 internal extension ProvisioningInstaller {
 
-	static func install(from directoryPath: String) throws {
+	static func install(from directoryPath: String, using uuidSearcher: FileSearcher) throws {
 		let filesDirUrl = try createProvisioningUrl(path: directoryPath)
 		let files = try FileManager.default.contentsOfDirectory(
 			at: filesDirUrl, includingPropertiesForKeys: nil)
 		let provisioningFiles = files.filter { $0.pathExtension == "mobileprovision" }
 		let targetDirectory = FileManager.default.getProvisioningsTargetDirectory()
 		for provisioningFile in provisioningFiles {
-			let uuid = try provisioningFile.uuidFromFileContent()
+			let uuid = try uuidSearcher.search(in: provisioningFile)
 			let targetFilePath = targetDirectory + uuid + ".mobileprovision"
 			try FileManager.default.createDirIfNotExists(targetDirectory)
 			try FileManager.default.removeFileIfExist(at: targetFilePath)
@@ -51,39 +111,31 @@ private extension FileManager {
 	}
 }
 
-private extension URL {
-	func uuidFromFileContent() throws -> String {
-		let fileContent = try String(contentsOf: self, encoding: .isoLatin1)
-		guard
-			let uuidDictEntry = fileContent.getFirstMatching(
-				#"<key>UUID</key>[\n\t]*<string>[-a-fA-F0-9]{36}</string>"#),
-			let uuid = uuidDictEntry.getFirstMatching(#"[-a-f0-9]{36}"#)
-		else {
-			throw MissingProperty.error(message: "Missing UUID in provisioning file")
-				.with(
-					self.absoluteString, for: "Provisioning file path")
-		}
-		return uuid
-	}
-
+protocol FileSearcher {
+	func search(in file: URL) throws -> String
 }
 
-extension String {
-	/// Searches in the string for matches based on a given regular expression pattern and returns the first one.
-	///- Parameter pattern: Regular expression pattern based on which the search will be performed.
-	///- Returns: The first found string that matches the given regex. When no matching string was found then returns`nil`.
-	fileprivate func getFirstMatching(_ pattern: String) -> String? {
-		let regex: NSRegularExpression
-		do {
-			regex = try NSRegularExpression(pattern: pattern)
-		} catch { return nil }
+struct UUIDSearcher: FileSearcher {
 
-		let contentRange = NSMakeRange(0, count)
+	private let regexp = Regex {
+		"<key>UUID</key>"
+		OneOrMore(CharacterClass(.whitespace, .anyOf("\n\t")))
+		"<string>"
+		Capture {
+			Repeat(CharacterClass(.hexDigit, .anyOf("-")), count: 36)
+		} transform: {
+			String($0)
+		}
+		"</string>"
+	}
 
-		guard let firstMatch = regex.firstMatch(in: self, range: contentRange),
-			let matchRange = Range(firstMatch.range, in: self)
-		else { return nil }
-
-		return String(self[matchRange])
+	func search(in file: URL) throws -> String {
+		let fileContent: String = try String(contentsOf: file, encoding: .isoLatin1)
+		guard let (_, uuid) = fileContent.firstMatch(of: regexp)?.output else {
+			throw MissingProperty.error(message: "Missing UUID in provisioning file")
+				.with(
+					file.absoluteString, for: "Provisioning file path")
+		}
+		return String(uuid)
 	}
 }

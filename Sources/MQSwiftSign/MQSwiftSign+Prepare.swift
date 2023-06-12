@@ -1,6 +1,7 @@
 import ArgumentParser
 import CryptoKit
 import Foundation
+import MQDo
 
 extension MQSwiftSign {
 	struct PrepareOptions: ParsableArguments {
@@ -22,7 +23,9 @@ extension MQSwiftSign {
 
 		@Option(
 			name: .long,
-			help: "Temporary keychain password. If not provided, the tool will use random generated, 15 characters long string.")
+			help:
+				"Temporary keychain password. If not provided, the tool will use random generated, 15 characters long string."
+		)
 		fileprivate var keychainPassword: String?
 
 		@Option(name: .long, help: "Relative path to a directory which contains provisioning profiles to be installed.")
@@ -37,11 +40,24 @@ extension MQSwiftSign {
 			name: .long, parsing: .upToNextOption,
 			help: "Absolute paths to apps that are allowed access to the keychain item without user confirmation.")
 		fileprivate var applications: [String] = []
+
+		@Flag(
+			name: .long,
+			help: "Disable colors in logs."
+		)
+		internal var disableColors: Bool = false
+
+		@Flag(
+			name: .long,
+			help: "Disable emoji in logs."
+		)
+		internal var disableEmoji: Bool = false
+
 	}
 }
 
 extension MQSwiftSign {
-	struct Prepare: ParsableCommand {
+	struct Prepare: ParsableCommand, MQSwiftSignCommand {
 
 		static var configuration: CommandConfiguration {
 			CommandConfiguration(commandName: "prepare")
@@ -56,19 +72,30 @@ extension MQSwiftSign {
 		}
 
 		mutating func run() throws {
-			guard let decodedCert = Data(base64Encoded: prepareOptions.certContent) else {
+			try run(features)
+		}
+
+		mutating func run(_ features: Features) throws {
+			Logger.configure(showEmojis: !prepareOptions.disableEmoji, colorizeMessages: !prepareOptions.disableColors)
+			guard prepareOptions.certContent.isEmpty == false,
+				let decodedCert = Data(base64Encoded: prepareOptions.certContent)
+			else {
 				throw InvalidCertificate.error(message: "Certificate is not valid base64")
 			}
+
 			let certPassword = self.prepareOptions.certPassword ?? ""
 			let keychainName =
 				self.prepareOptions.keychainName ?? calculateSHAHash(for: String(prepareOptions.certContent.prefix(10)))
 			let keychainPassword = self.prepareOptions.keychainPassword ?? randomString(length: 15)
-			let keychain = try Keychain(keychainName: keychainName, keychainPassword: keychainPassword)
+
+			let keychain: Keychain = try features.instance()
+			try keychain.setup(keychainName: keychainName, keychainPassword: keychainPassword)
 			try keychain.import(decodedCert, using: certPassword, for: prepareOptions.applications)
 			try keychain.setACLs(using: keychainPassword, with: prepareOptions.customAcls)
 			if let provisioningPath = self.prepareOptions.provisioningPath {
 				Logger.info("Detected provisioning file path at \(provisioningPath). Installing...")
-				try ProvisioningInstaller.install(from: provisioningPath)
+				let installer: ProvisioningInstaller = try features.instance()
+				try installer.install(from: provisioningPath, using: UUIDSearcher())
 			}
 		}
 

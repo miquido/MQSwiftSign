@@ -131,24 +131,39 @@ flutter_build_and_upload: \
 	._upload
 	
 prepare:
-	$(MQSWIFTSIGN_DIR)/MQSwiftSign prepare $(prepare_keychain_subcommand_options)
+	$(print_prepare)
+	@$(MQSWIFTSIGN_DIR)/MQSwiftSign prepare $(prepare_keychain_subcommand_options)
 	
 cleanup:
 	$(MQSWIFTSIGN_DIR)/MQSwiftSign cleanup
 
-## PRIVATE 
+## PRIVATE
 
 prepare_keychain_subcommand_options=$(CERT_CONTENT) $(CERT_PASSWORD_OPTION) $(KEYCHAIN_NAME_OPTION) $(KEYCHAIN_PASSWORD_OPTION) $(PROVISIONING_OPTION) $(CUSTOM_ACLS_OPTION) $(APPLICATIONS_OPTION)
 
 ._prepare_ios_auth:
-	mkdir ./private_keys && echo "$(ASC_KEY_CONTENT)" | base64 --decode > ./private_keys/AuthKey_$(ASC_KEY_ID).p8
+	$(print_prepare_ios_auth)
+	@mkdir ./private_keys && echo "$(ASC_KEY_CONTENT)" | base64 --decode > ./private_keys/AuthKey_$(ASC_KEY_ID).p8
 
 ._ios_prepare_and_build_with_export_plist:
-	$(MQSWIFTSIGN_DIR)/MQSwiftSign $(prepare_keychain_subcommand_options) $(DISTRIBUTION_METHOD_OPTION) --shell-script "xcodebuild archive $(PROJECT_OPTION) $(WORKSPACE_OPTION) $(SCHEME_OPTION) $(TARGET_IOS_OPTION) $(CONFIGURATION_OPTION) $(ARCHIVE_OPTION) $(SDK_OPTION) && xcodebuild -exportArchive $(ARCHIVE_OPTION) $(EXPORT_OPTION) $(IOS_EXPORT_OPTIONS_PLIST_OPTION)"
+	$(print_ios_prepare_and_build_with_export_plist)
+	@$(MQSWIFTSIGN_DIR)/MQSwiftSign $(prepare_keychain_subcommand_options) $(DISTRIBUTION_METHOD_OPTION) --shell-script "xcodebuild archive $(PROJECT_OPTION) $(WORKSPACE_OPTION) $(SCHEME_OPTION) $(TARGET_IOS_OPTION) $(CONFIGURATION_OPTION) $(ARCHIVE_OPTION) $(SDK_OPTION) && xcodebuild -exportArchive $(ARCHIVE_OPTION) $(EXPORT_OPTION) $(IOS_EXPORT_OPTIONS_PLIST_OPTION)"
 
 ._flutter_prepare_and_build_with_export_plist:
-	$(MQSWIFTSIGN_DIR)/MQSwiftSign $(prepare_keychain_subcommand_options) $(DISTRIBUTION_METHOD_OPTION) --shell-script "fvm flutter build ipa $(FLUTTER_BUILD_CONFIGURATION_OPTION) $(FLUTTER_FLAVOR_OPTION) $(FLUTTER_TARGET_OPTION) $(FLUTTER_BUILD_NUMBER_OPTION) $(FLUTTER_EXPORT_OPTIONS_PLIST_OPTION) "
+	$(print_flutter_prepare_and_build_with_export_plist)
+	@$(MQSWIFTSIGN_DIR)/MQSwiftSign $(prepare_keychain_subcommand_options) $(DISTRIBUTION_METHOD_OPTION) --shell-script "fvm flutter build ipa $(FLUTTER_BUILD_CONFIGURATION_OPTION) $(FLUTTER_FLAVOR_OPTION) $(FLUTTER_TARGET_OPTION) $(FLUTTER_BUILD_NUMBER_OPTION) $(FLUTTER_EXPORT_OPTIONS_PLIST_OPTION) "
 
 ._upload: ._prepare_ios_auth
-	xcrun altool --validate-app -f $(EXPORT_PATH)/*.ipa --apiKey $(ASC_KEY_ID) --apiIssuer $(ASC_KEY_ISSUER) --type ios
-	xcrun altool --upload-app -f $(EXPORT_PATH)/*.ipa --apiKey $(ASC_KEY_ID) --apiIssuer $(ASC_KEY_ISSUER) --type ios
+	$(print_app_validation)
+	$(print_app_upload)
+	@xcrun altool --validate-app -f $(EXPORT_PATH)/*.ipa --apiKey $(ASC_KEY_ID) --apiIssuer $(ASC_KEY_ISSUER) --type ios
+	@xcrun altool --upload-app -f $(EXPORT_PATH)/*.ipa --apiKey $(ASC_KEY_ID) --apiIssuer $(ASC_KEY_ISSUER) --type ios
+
+# Makefile prints executed command by default, including resolved vars that should be kept secret. We do custom print instead to hide them
+print_prepare=@echo $(MQSWIFTSIGN_DIR)/MQSwiftSign prepare $(print_options)
+print_prepare_ios_auth=@echo "mkdir ./private_keys && echo <ASC_KEY_CONTENT> | base64 --decode > ./private_keys/AuthKey_<ASC_KEY_ID>.p8"
+print_ios_prepare_and_build_with_export_plist=@echo $(MQSWIFTSIGN_DIR)/MQSwiftSign $(print_options) $(DISTRIBUTION_METHOD_OPTION) --shell-script "xcodebuild archive $(PROJECT_OPTION) $(WORKSPACE_OPTION) $(SCHEME_OPTION) $(TARGET_IOS_OPTION) $(CONFIGURATION_OPTION) $(ARCHIVE_OPTION) $(SDK_OPTION) && xcodebuild -exportArchive $(ARCHIVE_OPTION) $(EXPORT_OPTION) $(IOS_EXPORT_OPTIONS_PLIST_OPTION)"
+print_flutter_prepare_and_build_with_export_plist=@echo $(MQSWIFTSIGN_DIR)/MQSwiftSign $(print_options) $(DISTRIBUTION_METHOD_OPTION) --shell-script "fvm flutter build ipa $(FLUTTER_BUILD_CONFIGURATION_OPTION) $(FLUTTER_FLAVOR_OPTION) $(FLUTTER_TARGET_OPTION) $(FLUTTER_BUILD_NUMBER_OPTION) $(FLUTTER_EXPORT_OPTIONS_PLIST_OPTION)"
+print_app_validation=@echo "xcrun altool --validate-app -f $(EXPORT_PATH)/*.ipa --apiKey <ASC_KEY_ID> --apiIssuer <ASC_KEY_ISSUER> --type ios"
+print_app_upload=@echo "xcrun altool --upload-app -f $(EXPORT_PATH)/*.ipa --apiKey <ASC_KEY_ID> --apiIssuer <ASC_KEY_ISSUER> --type ios"
+print_options=$(if $(CERT_CONTENT), "<CERT_CONTENT>") $(if $(CERT_PASSWORD), --cert-password "<CERT_PASSWORD>") $(KEYCHAIN_NAME_OPTION) $(if $(KEYCHAIN_PASSWORD), --keychain-password "<KEYCHAIN_PASSWORD>") $(PROVISIONING_OPTION) $(CUSTOM_ACLS_OPTION) $(APPLICATIONS_OPTION)

@@ -1,17 +1,12 @@
 import Foundation
+import RegexBuilder
 
 protocol PatternValidator: Validator where ValidatedType == String {
-	var pattern: String { get }
+	var pattern: Regex<Substring> { get }
 }
 
 extension PatternValidator {
 	func isValid() -> Bool {
-		if let _ = try? NSRegularExpression(pattern: pattern)
-			.firstMatch(
-				in: value, range: NSRange(value.startIndex..<value.endIndex, in: value))
-		{
-			return true
-		}
-		return false
+		return value.firstMatch(of: pattern) != nil
 	}
 }

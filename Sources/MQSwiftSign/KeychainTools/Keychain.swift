@@ -1,58 +1,86 @@
 import Foundation
+import MQDo
 
 struct Keychain {
+	var setup: (String, String) throws -> Void
+	var `import`: (Data, String, [String]) throws -> Void
+	var setACLs: (String, [String]) throws -> Void
+}
 
-	private let itemAccessManager = KeychainItemAccessManager()
-	private let searcher = KeychainSearcher()
-
-	private var keychain: SecKeychain
-
-	init(keychainName: String, keychainPassword: String) throws {
-		let existingKeychain = SecKeychain.get(keychainName)
-		existingKeychain?.delete()
-		self.keychain = try SecKeychain.create(keychainName, keychainPassword)
-		try keychain.addToSearchlist()
-		try keychain.setDefaultSettings()
-		try keychain.unlock(with: keychainPassword)
+// syntactic sugar
+extension Keychain {
+	func setup(keychainName: String, keychainPassword: String) throws {
+		try setup(keychainName, keychainPassword)
 	}
 
-	func `import`(_ certificate: Data, using password: String, for customApplications: [String]) throws {
-		let options = try itemAccessManager.prepareAccessOptions(with: customApplications)
-		var parameters = SecItemImportExportKeyParameters.default(using: password, and: options)
-
-		try SecItemImport(
-			certificate as CFData,
-			".p12" as CFString,
-			nil,
-			nil,
-			SecItemImportExportFlags(rawValue: 0),
-			&parameters,
-			keychain,
-			nil
-		)
-		.onFailThrowing(KeychainItemImportFailed.error(message: "Importing certificate into keychain failed"))
-
-		Logger.info("Certificate imported into a temporary keychain")
+	func `import`(_ data: Data, using password: String, for applications: [String]) throws {
+		try `import`(data, password, applications)
 	}
 
 	func setACLs(using password: String, with customPartitions: [String]) throws {
-		let searchResult = try searcher.searchForItems(in: keychain)
-		try itemAccessManager.modifyAccess(
-			using: searchResult, password: password, customPartitions: customPartitions)
+		try setACLs(password, customPartitions)
 	}
 }
 
-extension SecItemImportExportKeyParameters {
-	fileprivate static func `default`(using password: String, and access: SecAccess) -> Self {
-		return SecItemImportExportKeyParameters(
-			version: 0,
-			flags: SecKeyImportExportFlags(rawValue: 0),
-			passphrase: Unmanaged.passRetained(password as AnyObject),
-			alertTitle: nil,
-			alertPrompt: nil,
-			accessRef: Unmanaged.passUnretained(access),
-			keyUsage: nil,
-			keyAttributes: nil
+extension Keychain: DisposableFeature {
+	static var placeholder: Keychain {
+		Keychain(
+			setup: unimplemented2(),
+			import: unimplemented3(),
+			setACLs: unimplemented2()
+		)
+	}
+}
+
+final class SystemKeychain: ImplementationOfDisposableFeature {
+	private let worker: SecKeychainAPI
+	private let itemAccessManager: KeychainItemAccessManager
+	private let searcher: KeychainSearcher
+	private let secItemAPI: SecItemAPI
+	private var keychain: CFWrapper<SecKeychain>?
+
+	init(with context: Void, using features: Features) throws {
+		worker = try features.instance()
+		itemAccessManager = try features.instance()
+		searcher = try features.instance()
+		secItemAPI = try features.instance()
+	}
+
+	private func setup(keychainName: String, keychainPassword: String) throws {
+		let existingKeychain = worker.get(keychainName)
+		worker.delete(existingKeychain)
+		let keychain = try worker.create(keychainName, keychainPassword)
+		try worker.addToSearchList(keychain)
+		try worker.setDefaultSettings(keychain)
+		try worker.unlock(keychain, keychainPassword)
+		self.keychain = keychain
+	}
+
+	private func `import`(_ certificate: Data, using password: String, for customApps: [String]) throws {
+		let options = try itemAccessManager.prepareAccessOptions(with: customApps)
+		var parameters = try secItemAPI.createParameters(using: password, options: options)
+		try secItemAPI.`import`(certificate, &parameters, keychain)
+			.onFailThrowing(KeychainItemImportFailed.error(message: "Importing certificate into keychain failed"))
+		Logger.successInfo("Certificate imported into a temporary keychain")
+	}
+
+	private func setACLs(using password: String, with customPartitions: [String]) throws {
+		guard let keychain else {
+			throw AccessFailed.error(message: "Keychain not initialized")
+		}
+		let searchResult = try searcher.searchForItems(in: keychain)
+		try itemAccessManager.modifyAccess(
+			using: searchResult,
+			password: password,
+			customPartitions: customPartitions
+		)
+	}
+
+	var instance: Keychain {
+		.init(
+			setup: setup(keychainName:keychainPassword:),
+			import: `import`(_:using:for:),
+			setACLs: setACLs(using:with:)
 		)
 	}
 }
