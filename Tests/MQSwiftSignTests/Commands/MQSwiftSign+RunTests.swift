@@ -46,6 +46,70 @@ final class MQSwiftSign_Run_Tests: FeatureTests {
 		)
 	}
 
+	func testShouldCreateExportOptionsPlistIfDistributionMethodIsProvided() async throws {
+		await test(
+			patches: { patches, executed in
+				patches(
+					patch: \MQSwiftSignCommandFactory.prepare,
+					with: { options in
+						CommandMock(run: noop)
+					}
+				)
+				patches(
+					patch: \MQSwiftSignCommandFactory.cleanup,
+					with: { CommandMock(run: noop) }
+				)
+				patches(
+					patch: \ShellScriptExecutor.execute,
+					with: noop
+				)
+				patches(
+					patch: \PlistCreator.create,
+					with: {
+						executed()
+					}
+				)
+			},
+			executedPrepared: 1,
+			execute: { features in
+				var sut = try MQSwiftSign.Run.parse([self.mockedCertificate, "--shell-script", "echo \"OK\"", "--distribution-method", "app-store"])
+				try sut.run(features)
+			}
+		)
+	}
+
+	func testShouldNotCreateExportOptionsPlistIfDistributionMethodIsNotProvided() async throws {
+		await test(
+			patches: { patches, executed in
+				patches(
+					patch: \MQSwiftSignCommandFactory.prepare,
+					with: { options in
+						CommandMock(run: noop)
+					}
+				)
+				patches(
+					patch: \MQSwiftSignCommandFactory.cleanup,
+					with: { CommandMock(run: noop) }
+				)
+				patches(
+					patch: \ShellScriptExecutor.execute,
+					with: noop
+				)
+				patches(
+					patch: \PlistCreator.create,
+					with: {
+						executed()
+					}
+				)
+			},
+			executedPrepared: 0,
+			execute: { features in
+				var sut = try MQSwiftSign.Run.parse([self.mockedCertificate, "--shell-script", "echo \"OK\""])
+				try sut.run(features)
+			}
+		)
+	}
+
 	func testShouldFailIfPlistCreationFail() async {
 		await test(
 			patches: { patches in

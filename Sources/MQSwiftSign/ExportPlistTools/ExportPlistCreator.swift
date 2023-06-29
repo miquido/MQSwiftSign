@@ -1,7 +1,6 @@
 import Foundation
 import MQDo
 
-
 struct PlistCreator {
 	var create: () throws -> Void
 
@@ -50,39 +49,23 @@ internal enum ExportPlistOption: String {
 struct ExportPlistCreator: ImplementationOfDisposableFeature {
 	private let buildCommand: BuildCommand
 	private let distributionMethod: DistributionMethod
+	private let optionsWriter: ExportOptionsWriter
+	private let optionsExtractor: ExportOptionsExtractor
 
-	init(with context: PlistCreator.Context, using _: Features) throws {
+	init(with context: PlistCreator.Context, using features: Features) throws {
 		self.buildCommand = BuildCommandParser.from(shellScript: context.shellScript)
 		self.distributionMethod = context.distributionMethod
+		self.optionsWriter = try features.instance(context: ExportPath(rawValue: buildCommand.exportPlistPath))
+		self.optionsExtractor = try features.instance(context: buildCommand.commandOptions)
 	}
 
 	func createExportPlist() throws {
-		let projectParser: ProjectParser = ProjectParser(
-			options: buildCommand.commandOptions,
-			distributionMethod: distributionMethod)
-		let parsedProject: ProjectFile = try projectParser.parseProject()
-		let tree: TargetDependencyTree = try parsedProject.prepareTargetDependencyTree()
-		var exportOptions: ExportOptionsPlist = try tree.exportOptionsPlistContent()
+		var exportOptions = try optionsExtractor.extract()
 		exportOptions.setDistributionMethod(distributionMethod.rawValue)
-		try saveExportPlist(exportOptions)
+		try optionsWriter.write(exportOptions)
 	}
 
 	var instance: PlistCreator {
 		.init(create: createExportPlist)
-	}
-}
-
-private extension ExportPlistCreator {
-	private func saveExportPlist(_ content: ExportOptionsPlist) throws {
-		Logger.info("Saving export plist.")
-		let exportOptionPlistUrl: URL = URL(
-			fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true
-		)
-		.appendingPathComponent(buildCommand.exportPlistPath)
-		try FileManager.default.createDirIfNotExists(exportOptionPlistUrl.deletingLastPathComponent().path)
-		let exportOptionsPlistContentData: Data = try PropertyListSerialization.data(
-			fromPropertyList: content.convertKeysToRawTypes(), format: .xml, options: 0)
-		try exportOptionsPlistContentData.write(to: exportOptionPlistUrl)
-		Logger.successInfo("Export plist saved at path: \(buildCommand.exportPlistPath).")
 	}
 }

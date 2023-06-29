@@ -17,8 +17,8 @@ let features: Features = FeaturesRoot { registry in
 	registry.use(SystemKeychainItemAccessManager.self)
 	registry.use(KeychainSearcher.system())
 	registry.use(ProvisioningInstaller.system())
-	registry.use(ExportPlistCreator.self)
 	registry.use(MQSwiftSignCommandFactory.default())
 	registry.use(SystemShellScriptExecutor.self)
 	registry.useCoreFoundationAPIs()
+	registry.useExportPlistTools()
 }
