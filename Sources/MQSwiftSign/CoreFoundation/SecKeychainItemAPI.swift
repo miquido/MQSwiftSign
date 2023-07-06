@@ -12,7 +12,7 @@ extension SecKeychainItemAPI {
 		item: CFWrapper<SecKeychainItem>,
 		access: CFWrapper<SecAccess>,
 		password: String
-	) throws -> Void {
+	) throws {
 		try setAccessWithPassword(item, access, password)
 	}
 }
@@ -33,7 +33,7 @@ extension SecKeychainItemAPI {
 				setAccessWithPassword: { (item, access, password) throws in
 					let error = KeychainSetPropertiesFailed.error(message: "Setting access for item failed")
 					guard let item = item.value,
-								let access = access.value
+						let access = access.value
 					else {
 						throw AccessFailed.error(message: "Keychain item or access instance not initialized")
 					}
@@ -46,7 +46,8 @@ extension SecKeychainItemAPI {
 
 					Logger.successInfo("Performing search for imported keys in keychain...")
 					try SecItemCopyMatching(query as CFDictionary, &searchResult)
-						.onFailThrowing(KeychainItemSearchFailed.error(message: "Searching imported keys in keychain failed"))
+						.onFailThrowing(
+							KeychainItemSearchFailed.error(message: "Searching imported keys in keychain failed"))
 
 					// swift-format-ignore: NeverForceUnwrap
 					let resultArray = searchResult as! CFArray as? Array<[String: Any]>

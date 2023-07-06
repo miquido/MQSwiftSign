@@ -155,4 +155,13 @@ final class IOSBuildCommandRegexTests: XCTestCase {
 		]
 		XCTAssertEqual(commandParser.commandOptions, expectedCommandOptions)
 	}
+
+	func test_givenTildeOnTheBeginningOfThePath_regexFindsMatch() throws {
+		let givenShellScript = "-workspace ~/repos/some-repo.xcworkspace"
+		let commandParser: BuildCommand = IosBuildCommand(shellScript: givenShellScript)
+		let expectedCommandOptions: BuildCommandOptions = [
+			.workspacePath: "~/repos/some-repo.xcworkspace"
+		]
+		XCTAssertEqual(commandParser.commandOptions, expectedCommandOptions)
+	}
 }

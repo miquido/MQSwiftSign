@@ -28,7 +28,7 @@ extension SecAccessAPI {
 						} as CFArray,
 						&accessRef
 					)
-						.onFailThrowing(AccessFailed.error(message: "Access instance creation failed"))
+					.onFailThrowing(AccessFailed.error(message: "Access instance creation failed"))
 					guard let accessRef else {
 						throw AccessFailed.error(message: "Access instance creation failed")
 					}

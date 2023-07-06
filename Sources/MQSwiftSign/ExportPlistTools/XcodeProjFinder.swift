@@ -65,7 +65,8 @@ extension XcodeProjFinder {
 					)
 				}
 				guard let scheme = xcodeProj.sharedData?.schemes.first(where: { $0.name == schemeName }) else {
-					throw ExportPlistContentCreationFailed.error(
+					throw
+						ExportPlistContentCreationFailed.error(
 							message: "Cannot fetch app scheme from the project file"
 						)
 						.with(schemeName, for: "SchemeName")
@@ -73,7 +74,9 @@ extension XcodeProjFinder {
 				return scheme
 			}
 
-			func findConfigurationName(in scheme: XCScheme, requestedConfigurationName: String?) throws -> ConfigurationName {
+			func findConfigurationName(in scheme: XCScheme, requestedConfigurationName: String?) throws
+				-> ConfigurationName
+			{
 				guard let configName = requestedConfigurationName ?? scheme.archiveAction?.buildConfiguration else {
 					throw ExportPlistContentCreationFailed.error(
 						message: "No configuration name provided. Cannot generate exportPlist."
@@ -83,13 +86,15 @@ extension XcodeProjFinder {
 			}
 
 			func findRootTarget(_ scheme: XCScheme) throws -> PBXTarget {
-				guard let rootTargetName = scheme.buildAction?
-					.buildActionEntries
-					.first(where: { $0.buildableReference.buildableName.hasSuffix(".app") })?
-					.buildableReference
-					.blueprintName
+				guard
+					let rootTargetName = scheme.buildAction?
+						.buildActionEntries
+						.first(where: { $0.buildableReference.buildableName.hasSuffix(".app") })?
+						.buildableReference
+						.blueprintName
 				else {
-					throw ExportPlistContentCreationFailed.error(
+					throw
+						ExportPlistContentCreationFailed.error(
 							message: "No buildable target name found."
 						)
 						.with(scheme.name, for: "SchemeName")
@@ -97,7 +102,8 @@ extension XcodeProjFinder {
 
 				guard let rootTarget = xcodeProj.pbxproj.targets(named: rootTargetName).first
 				else {
-					throw ExportPlistContentCreationFailed.error(
+					throw
+						ExportPlistContentCreationFailed.error(
 							message: "Target not found found."
 						)
 						.with(scheme.name, for: "SchemeName")
@@ -109,7 +115,7 @@ extension XcodeProjFinder {
 			func findTarget(_ targetName: String) throws -> PBXTarget {
 				guard let target = xcodeProj.pbxproj.targets(named: targetName).first else {
 					throw
-					ExportPlistContentCreationFailed.error(
+						ExportPlistContentCreationFailed.error(
 							message: "Cannot fetch app target from the project file"
 						)
 						.with(targetName, for: "TargetName")

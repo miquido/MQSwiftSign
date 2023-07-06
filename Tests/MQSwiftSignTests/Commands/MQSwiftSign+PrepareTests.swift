@@ -1,5 +1,6 @@
 import Foundation
 import MQAssert
+
 @testable import MQSwiftSign
 
 final class MQSwiftSign_Prepare_Tests: FeatureTests {

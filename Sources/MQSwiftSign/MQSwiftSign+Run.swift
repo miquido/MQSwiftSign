@@ -1,7 +1,7 @@
 import ArgumentParser
+import MQDo
 
 import func Foundation.exit
-import MQDo
 
 extension MQSwiftSign {
 	struct Run: ParsableCommand, MQSwiftSignCommand {

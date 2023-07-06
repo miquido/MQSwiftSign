@@ -1,4 +1,5 @@
 import Foundation
+
 @testable import MQSwiftSign
 
 class KeychainItemAccessManagerTests: FeatureTests {
@@ -15,7 +16,8 @@ class KeychainItemAccessManagerTests: FeatureTests {
 				patches(
 					patch: \SecAccessAPI.create,
 					with: { apps in
-						XCTAssertEqual(apps.count, SystemKeychainItemAccessManager.defaultApps.count + self.customApps.count)
+						XCTAssertEqual(
+							apps.count, SystemKeychainItemAccessManager.defaultApps.count + self.customApps.count)
 						executed()
 						return .empty
 					}

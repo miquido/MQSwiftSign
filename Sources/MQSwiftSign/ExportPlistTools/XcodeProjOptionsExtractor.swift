@@ -7,15 +7,21 @@ extension ExportOptionsExtractor {
 		.disposable { buildOptions, features in
 			ExportOptionsExtractor(
 				extract: {
-					var path: String? = buildOptions[.projectPath] ?? buildOptions[.workspacePath]
-					guard let path else {
+					let projectPath: String? = buildOptions[.projectPath]
+					let workspacePath: String? = buildOptions[.workspacePath]
+					let xcodeProj: XcodeProj
+					if let pPath = projectPath {
+						xcodeProj = try XcodeProj(pathString: pPath)
+					} else if let wPath = workspacePath {
+						xcodeProj = try XcodeProj(workspacePath: wPath)
+					} else {
 						throw ExportPlistContentCreationFailed.error(
 							message:
-							"No -workspace nor -project options were provided in build command. ExportPlist generator cannot proceed."
+								"No -workspace nor -project options were provided in build command. ExportPlist generator cannot proceed."
 						)
 					}
-					let xcodeProj = try XcodeProj(pathString: path)
-					let extractor: XcodeProjOptionsExtractor = try features.instance(context: .init(xcodeProj: xcodeProj, options: buildOptions))
+					let extractor: XcodeProjOptionsExtractor = try features.instance(
+						context: .init(xcodeProj: xcodeProj, options: buildOptions))
 					return try extractor.extract()
 				}
 			)
@@ -53,7 +59,8 @@ extension XcodeProjOptionsExtractor {
 					configurationName = try worker.findConfigurationName(context.options[.configurationName])
 				} else {
 					let scheme = try worker.findScheme(context.options[.schemeName])
-					configurationName = try worker.findConfigurationName(in: scheme, requestedConfigurationName: context.options[.configurationName])
+					configurationName = try worker.findConfigurationName(
+						in: scheme, requestedConfigurationName: context.options[.configurationName])
 					target = try worker.findRootTarget(in: scheme)
 				}
 

@@ -28,11 +28,12 @@ extension SecItemAPI {
 	static func system() -> FeatureLoader {
 		.disposable { features in
 			SecItemAPI(
-				import: { (
-					certificate,
-					parameters: inout SecItemImportExportKeyParameters,
-					keychain: CFWrapper<SecKeychain>?
-				) -> OSStatus in
+				import: {
+					(
+						certificate,
+						parameters: inout SecItemImportExportKeyParameters,
+						keychain: CFWrapper<SecKeychain>?
+					) -> OSStatus in
 					guard let keychain = keychain?.value else {
 						return errSecParam
 					}
@@ -47,7 +48,8 @@ extension SecItemAPI {
 						nil
 					)
 				},
-				createParameters: { (password, access: CFWrapper<SecAccess>?) throws -> SecItemImportExportKeyParameters in
+				createParameters: {
+					(password, access: CFWrapper<SecAccess>?) throws -> SecItemImportExportKeyParameters in
 					guard let access = access?.value else {
 						throw KeychainSetPropertiesFailed.error()
 					}

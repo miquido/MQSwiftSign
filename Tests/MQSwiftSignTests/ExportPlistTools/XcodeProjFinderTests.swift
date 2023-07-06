@@ -1,13 +1,14 @@
 import Foundation
 import MQAssert
 import XcodeProj
+
 @testable import MQSwiftSign
 
 final class XcodeProjFinderTests: FeatureTests {
 	func test_givenRequestedConfigurationName_shouldReturnConfigurationName() async {
 		await test(
 			XcodeProjFinder.live(),
-			context: XcodeProj.sample,
+			context: XcodeProj.sample_xcodeproj,
 			executing: { (feature: XcodeProjFinder) in
 				let configurationName = try feature.findConfigurationName(requestedConfigurationName: "Debug")
 				XCTAssertEqual(configurationName, "Debug")
@@ -16,7 +17,7 @@ final class XcodeProjFinderTests: FeatureTests {
 	}
 
 	func test_givenNoRequestedConfigurationName_whenRootProjectIsMissing_shouldFail() async {
-		let xcodeProj = XcodeProj.sample
+		let xcodeProj = XcodeProj.sample_xcodeproj
 		xcodeProj.pbxproj.rootObject = nil
 		await test(
 			XcodeProjFinder.live(),
@@ -29,7 +30,7 @@ final class XcodeProjFinderTests: FeatureTests {
 	}
 
 	func test_givenNoRequestedConfigurationName_whenDefaultConfigurationIsMissing_shouldFail() async {
-		let xcodeProj = XcodeProj.sample
+		let xcodeProj = XcodeProj.sample_xcodeproj
 		xcodeProj.pbxproj.rootObject?.buildConfigurationList.defaultConfigurationName = nil
 		await test(
 			XcodeProjFinder.live(),
@@ -42,7 +43,7 @@ final class XcodeProjFinderTests: FeatureTests {
 	}
 
 	func test_givenNoRequestedConfigurationName_shouldReturnDefaultConfigurationName() async {
-		let xcodeProj = XcodeProj.sample
+		let xcodeProj = XcodeProj.sample_xcodeproj
 		xcodeProj.pbxproj.rootObject?.buildConfigurationList.defaultConfigurationName = "Debug"
 		await test(
 			XcodeProjFinder.live(),
@@ -57,7 +58,7 @@ final class XcodeProjFinderTests: FeatureTests {
 	func test_givenNoSchemeNameProvided_shouldFail() async {
 		await test(
 			XcodeProjFinder.live(),
-			context: XcodeProj.sample,
+			context: XcodeProj.sample_xcodeproj,
 			throws: ExportPlistContentCreationFailed.self,
 			executing: { (feature: XcodeProjFinder) in
 				try feature.findScheme(named: nil)
@@ -68,7 +69,7 @@ final class XcodeProjFinderTests: FeatureTests {
 	func test_givenSchemeName_whenSchemeIsMissing_shouldFail() async {
 		await test(
 			XcodeProjFinder.live(),
-			context: XcodeProj.sample,
+			context: XcodeProj.sample_xcodeproj,
 			throws: ExportPlistContentCreationFailed.self,
 			executing: { (feature: XcodeProjFinder) in
 				try feature.findScheme(named: "Test")
@@ -77,7 +78,7 @@ final class XcodeProjFinderTests: FeatureTests {
 	}
 
 	func test_givenSchemeName_whenSchemeExists_shouldReturnScheme() async {
-		let xcodeProj = XcodeProj.sample
+		let xcodeProj = XcodeProj.sample_xcodeproj
 		let scheme = XCScheme(name: "Test", lastUpgradeVersion: "1.0", version: "1.0")
 		xcodeProj.sharedData?.schemes.append(scheme)
 		await test(
@@ -93,10 +94,11 @@ final class XcodeProjFinderTests: FeatureTests {
 	func test_givenRequestedConfigurationNameInScheme_shouldReturnConfigurationName() async {
 		await test(
 			XcodeProjFinder.live(),
-			context: XcodeProj.sample,
+			context: XcodeProj.sample_xcodeproj,
 			executing: { (feature: XcodeProjFinder) in
 				let scheme = XCScheme(name: "Test", lastUpgradeVersion: "1.0", version: "1.0")
-				let configurationName = try feature.findConfigurationName(in: scheme, requestedConfigurationName: "Debug")
+				let configurationName = try feature.findConfigurationName(
+					in: scheme, requestedConfigurationName: "Debug")
 				XCTAssertEqual(configurationName, "Debug")
 			}
 		)
@@ -105,7 +107,7 @@ final class XcodeProjFinderTests: FeatureTests {
 	func test_givenNoRequestedConfigurationName_whenNoDefaultConfigurationInScheme_shouldFail() async {
 		await test(
 			XcodeProjFinder.live(),
-			context: XcodeProj.sample,
+			context: XcodeProj.sample_xcodeproj,
 			throws: ExportPlistContentCreationFailed.self,
 			executing: { (feature: XcodeProjFinder) in
 				let scheme = XCScheme(name: "Test", lastUpgradeVersion: "1.0", version: "1.0")
@@ -117,10 +119,11 @@ final class XcodeProjFinderTests: FeatureTests {
 	func test_givenNoRequestedConfigurationNameInScheme_shouldReturnDefaultConfigurationName() async {
 		await test(
 			XcodeProjFinder.live(),
-			context: XcodeProj.sample,
+			context: XcodeProj.sample_xcodeproj,
 			executing: { (feature: XcodeProjFinder) in
 				let scheme = XCScheme(name: "Test", lastUpgradeVersion: "1.0", version: "1.0")
-				scheme.archiveAction = XCScheme.ArchiveAction(buildConfiguration: "Release", revealArchiveInOrganizer: true)
+				scheme.archiveAction = XCScheme.ArchiveAction(
+					buildConfiguration: "Release", revealArchiveInOrganizer: true)
 				let result = try feature.findConfigurationName(in: scheme, requestedConfigurationName: nil)
 				XCTAssertEqual(result, "Release")
 			}
@@ -130,7 +133,7 @@ final class XcodeProjFinderTests: FeatureTests {
 	func test_givenSchemeWithoutBuildAction_shouldFail() async {
 		await test(
 			XcodeProjFinder.live(),
-			context: XcodeProj.sample,
+			context: XcodeProj.sample_xcodeproj,
 			throws: ExportPlistContentCreationFailed.self,
 			executing: { (feature: XcodeProjFinder) in
 				let scheme = XCScheme(name: "Test", lastUpgradeVersion: "1.0", version: "1.0")
@@ -142,7 +145,7 @@ final class XcodeProjFinderTests: FeatureTests {
 	func test_givenSchemeWithoutMatchingBuildableReferences_shouldFail() async {
 		await test(
 			XcodeProjFinder.live(),
-			context: XcodeProj.sample,
+			context: XcodeProj.sample_xcodeproj,
 			throws: ExportPlistContentCreationFailed.self,
 			executing: { (feature: XcodeProjFinder) in
 				let scheme = XCScheme(name: "Test", lastUpgradeVersion: "1.0", version: "1.0")
@@ -155,7 +158,7 @@ final class XcodeProjFinderTests: FeatureTests {
 	func test_givenSchemeWithValidBuildableReference_whenTargetIsMissing_shouldFail() async {
 		await test(
 			XcodeProjFinder.live(),
-			context: XcodeProj.sample,
+			context: XcodeProj.sample_xcodeproj,
 			throws: ExportPlistContentCreationFailed.self,
 			executing: { (feature: XcodeProjFinder) in
 				let scheme = XCScheme(name: "Test", lastUpgradeVersion: "1.0", version: "1.0")
@@ -177,7 +180,7 @@ final class XcodeProjFinderTests: FeatureTests {
 
 	func test_givenSchemeWithValidBuildableReference_shouldReturnTarget() async {
 		let target = PBXNativeTarget(name: "TestBuild")
-		let xcodeProj = XcodeProj.sample
+		let xcodeProj = XcodeProj.sample_xcodeproj
 		xcodeProj.pbxproj.add(object: target)
 		await test(
 			XcodeProjFinder.live(),
@@ -204,7 +207,7 @@ final class XcodeProjFinderTests: FeatureTests {
 	func test_givenTargetName_whenTargetIsMissing_shouldFail() async {
 		await test(
 			XcodeProjFinder.live(),
-			context: XcodeProj.sample,
+			context: XcodeProj.sample_xcodeproj,
 			throws: ExportPlistContentCreationFailed.self,
 			executing: { (feature: XcodeProjFinder) in
 				try feature.findTarget("TestBuild")
@@ -214,7 +217,7 @@ final class XcodeProjFinderTests: FeatureTests {
 
 	func test_givenTargetName_shouldReturnTarget() async {
 		let target = PBXNativeTarget(name: "TestBuild")
-		let xcodeProj = XcodeProj.sample
+		let xcodeProj = XcodeProj.sample_xcodeproj
 		xcodeProj.pbxproj.add(object: target)
 		await test(
 			XcodeProjFinder.live(),

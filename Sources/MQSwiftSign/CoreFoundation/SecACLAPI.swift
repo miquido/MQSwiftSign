@@ -49,9 +49,10 @@ extension SecACLAPI {
 					try SecAccessCopyACLList(accessRef, &aclList)
 						.onFailThrowing(error)
 					// swift-format-ignore: NeverForceUnwrap
-					return (aclList as! Array<SecACL>).map {
-						$0.wrapped
-					}
+					return (aclList as! Array<SecACL>)
+						.map {
+							$0.wrapped
+						}
 				},
 				list: { acl in
 					let error = AccessFailed.error(message: "Fetching ACL list for item failed")

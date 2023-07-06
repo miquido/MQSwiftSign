@@ -2,19 +2,20 @@ import Foundation
 import MQAssert
 import PathKit
 import XcodeProj
+
 @testable import MQSwiftSign
 
 final class ExportOptionsExtractorTests: FeatureTests {
 	override func commonPatches(_ patches: FeaturePatches) {
 		super.commonPatches(patches)
 
-		self.addTeardownBlock { [weak self] in
-			try? await self?.projectTestPath().delete()
-			try? await self?.workspaceTestPath().delete()
+		self.addTeardownBlock {
+			try? XcodeProj.projectTestPath().delete()
+			try? XcodeProj.workspaceTestPath().delete()
 		}
 	}
 
-	func test_givenNoProjectAndWorkspacePath_shouldFail() async {
+	func test_givenNoProjectNorWorkspacePath_shouldFail() async {
 		await test(
 			ExportOptionsExtractor.xcodeProj(),
 			context: [:],
@@ -31,7 +32,7 @@ final class ExportOptionsExtractorTests: FeatureTests {
 			context: [.workspacePath: "InvalidPath"],
 			executing: { (feature: ExportOptionsExtractor) in
 				do {
-					try feature.extract()
+					_ = try feature.extract()
 					XCTFail("Should fail")
 				} catch {
 					// expected error
@@ -46,7 +47,7 @@ final class ExportOptionsExtractorTests: FeatureTests {
 			context: [.projectPath: "InvalidPath"],
 			executing: { (feature: ExportOptionsExtractor) in
 				do {
-					try feature.extract()
+					_ = try feature.extract()
 					XCTFail("Should fail")
 				} catch {
 					// expected error
@@ -55,11 +56,12 @@ final class ExportOptionsExtractorTests: FeatureTests {
 		)
 	}
 
-	func test_givenValidWorkspacePath_shouldReturnExportOptions() async {
-		XcodeProj.sample.write(atWorkspacePath: workspaceTestPath())
+	func test_givenValidWorkspacePath_shouldReturnExportOptions() async throws {
+		try XcodeProj.sample_xcworkspace.write(path: XcodeProj.workspaceTestPath())
+		try XcodeProj.sample_xcodeproj.write(path: XcodeProj.projectTestPath())
 		await test(
 			ExportOptionsExtractor.xcodeProj(),
-			context: [.projectPath: self.workspaceTestPath().string],
+			context: [.workspacePath: XcodeProj.workspaceTestPath().string],
 			executedPrepared: 1,
 			when: { patches, executed in
 				patches(
@@ -77,11 +79,11 @@ final class ExportOptionsExtractorTests: FeatureTests {
 		)
 	}
 
-	func test_givenValidProjectPath_shouldReturnExportOptions() async {
-		XcodeProj.sample.write(atProjectPath: projectTestPath())
+	func test_givenValidProjectPath_shouldReturnExportOptions() async throws {
+		try XcodeProj.sample_xcodeproj.write(path: XcodeProj.projectTestPath())
 		await test(
 			ExportOptionsExtractor.xcodeProj(),
-			context: [.projectPath: projectTestPath().string],
+			context: [.projectPath: XcodeProj.projectTestPath().string],
 			executedPrepared: 1,
 			when: { patches, executed in
 				patches(
@@ -97,19 +99,5 @@ final class ExportOptionsExtractorTests: FeatureTests {
 				XCTAssertEqual(options.properties[.method] as? String, "development")
 			}
 		)
-	}
-}
-
-private extension ExportOptionsExtractorTests {
-	func pathForTest() -> Path {
-		Path(#file).parent()
-	}
-
-	func projectTestPath() -> Path {
-		pathForTest() + "TestProject.xcodeproj"
-	}
-
-	func workspaceTestPath() -> Path {
-		pathForTest() + "TestWorkspace.xcworkspace"
 	}
 }

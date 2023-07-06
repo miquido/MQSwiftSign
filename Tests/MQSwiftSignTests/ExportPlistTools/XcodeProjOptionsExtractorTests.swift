@@ -1,12 +1,13 @@
 import MQAssert
-@testable import MQSwiftSign
 import XcodeProj
+
+@testable import MQSwiftSign
 
 final class XcodeProjExportOptionsExtractorTests: FeatureTests {
 	func test_schemeNotFound_shouldFailWithError() async {
 		await test(
 			XcodeProjOptionsExtractor.live(),
-			context: .init(xcodeProj: XcodeProj.sample, options: [:]),
+			context: .init(xcodeProj: XcodeProj.sample_xcodeproj, options: [:]),
 			throws: ExportPlistContentCreationFailed.self,
 			when: { patches in
 				patches(
@@ -23,7 +24,7 @@ final class XcodeProjExportOptionsExtractorTests: FeatureTests {
 	func test_givenInvalidTarget_thenShouldFailWithError() async {
 		await test(
 			XcodeProjOptionsExtractor.live(),
-			context: .init(xcodeProj: XcodeProj.sample, options: [.targetName: "InvalidTarget"]),
+			context: .init(xcodeProj: XcodeProj.sample_xcodeproj, options: [.targetName: "InvalidTarget"]),
 			throws: ExportPlistContentCreationFailed.self,
 			when: { patches in
 				patches(
@@ -37,10 +38,11 @@ final class XcodeProjExportOptionsExtractorTests: FeatureTests {
 		)
 	}
 
-	func test_givenNoConfigurationNameProvided_whenThereIsNoDefaultConfiguration_thenShouldFailWithError() async throws {
+	func test_givenNoConfigurationNameProvided_whenThereIsNoDefaultConfiguration_thenShouldFailWithError() async throws
+	{
 		await test(
 			XcodeProjOptionsExtractor.live(),
-			context: .init(xcodeProj: XcodeProj.sample, options: [.targetName: "WatchApp"]),
+			context: .init(xcodeProj: XcodeProj.sample_xcodeproj, options: [.targetName: "WatchApp"]),
 			throws: ExportPlistContentCreationFailed.self,
 			when: { patches in
 				patches(

@@ -1,6 +1,7 @@
 import Foundation
-import XCTest
 import PathKit
+import XCTest
+
 @testable import MQSwiftSign
 
 final class ConfigurationObjectBuildSettingsTests: XCTestCase {
@@ -56,7 +57,7 @@ final class ConfigurationObjectBuildSettingsTests: XCTestCase {
 		let options = ConfigurationObjectBuildSettings(
 			properties: [
 				"PRODUCT_BUNDLE_IDENTIFIER": "com.example.app",
-				"PROVISIONING_PROFILE_SPECIFIER": ""
+				"PROVISIONING_PROFILE_SPECIFIER": "",
 			]
 		)
 		XCTAssertNil(try options.provisioningProfileSpecifier)
@@ -66,7 +67,7 @@ final class ConfigurationObjectBuildSettingsTests: XCTestCase {
 		let options = ConfigurationObjectBuildSettings(
 			properties: [
 				"PRODUCT_BUNDLE_IDENTIFIER": "#",
-				"PROVISIONING_PROFILE_SPECIFIER": "generic"
+				"PROVISIONING_PROFILE_SPECIFIER": "generic",
 			]
 		)
 		assertThrowsError(try options.provisioningProfileSpecifier, InvalidBundleID.error())

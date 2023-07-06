@@ -1,4 +1,5 @@
 import Foundation
+
 @testable import MQSwiftSign
 
 final class MQSwiftSign_Cleanup_Tests: FeatureTests {
@@ -71,7 +72,6 @@ final class MQSwiftSign_Cleanup_Tests: FeatureTests {
 		)
 	}
 }
-
 
 extension MQSwiftSign_Cleanup_Tests {
 	var keychainName: String { "keychainName" }

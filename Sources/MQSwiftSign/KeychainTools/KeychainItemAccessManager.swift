@@ -1,7 +1,7 @@
 import Foundation
+import MQDo
 import MQSwiftSignC
 import Security
-import MQDo
 
 struct KeychainItemAccessManager {
 	var prepareAccessOptions: ([String]) throws -> CFWrapper<SecAccess>

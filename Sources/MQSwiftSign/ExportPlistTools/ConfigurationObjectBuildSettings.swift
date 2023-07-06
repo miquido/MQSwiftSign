@@ -41,7 +41,8 @@ internal struct ConfigurationObjectBuildSettings {
 		self.platformSpecifier =
 			properties["PROVISIONING_PROFILE_SPECIFIER[sdk=\(platform ?? "iphoneos")*]"] as? String
 		self.genericDevelopmentTeam = (properties["DEVELOPMENT_TEAM"] as? String).nilIfEmpty
-		self.platformDevelopmentTeam = (properties["DEVELOPMENT_TEAM[sdk=\(platform ?? "iphoneos")*]"] as? String).nilIfEmpty
+		self.platformDevelopmentTeam =
+			(properties["DEVELOPMENT_TEAM[sdk=\(platform ?? "iphoneos")*]"] as? String).nilIfEmpty
 		self.genericIdentity = (properties["CODE_SIGN_IDENTITY"] as? String).nilIfEmpty
 		self.platformIdentity = (properties["CODE_SIGN_IDENTITY[sdk=\(platform ?? "iphoneos")*]"] as? String).nilIfEmpty
 		self.codeSigningStyle = (properties["CODE_SIGN_STYLE"] as? String ?? "Manual")?.lowercased()

@@ -13,7 +13,8 @@ struct DependencyTree {
 			let identity: CodeSignIdentity = settings.codesignIdentity,
 			let codesignStyle: CodeSignStyle = settings.codesignStyle
 		else {
-			throw ExportPlistContentCreationFailed.error(
+			throw
+				ExportPlistContentCreationFailed.error(
 					message: "Build configuration is incomplete - missing some key properties"
 				)
 				.with(targetName, for: "Target")
@@ -38,7 +39,9 @@ struct DependencyTree {
 
 	internal var provisioningProfileMapping: Dictionary<String, String> {
 		get throws {
-			var allSettings: [ConfigurationObjectBuildSettings] = allDependencies.map { ConfigurationObjectBuildSettings(properties: $0.settings) }
+			var allSettings: [ConfigurationObjectBuildSettings] = allDependencies.map {
+				ConfigurationObjectBuildSettings(properties: $0.settings)
+			}
 			allSettings.append(ConfigurationObjectBuildSettings(properties: settings))
 			return try allSettings.compactMap({ try $0.provisioningProfileSpecifier })
 				.reduce(

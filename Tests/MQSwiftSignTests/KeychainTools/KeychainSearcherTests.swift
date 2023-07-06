@@ -1,4 +1,5 @@
 import Foundation
+
 @testable import MQSwiftSign
 
 final class KeychainSearcherTests: FeatureTests {
@@ -26,7 +27,7 @@ final class KeychainSearcherTests: FeatureTests {
 				patches(
 					patch: \SecKeychainItemAPI.search,
 					with: { query in
-						XCTAssertEqual(query.count, 5) // query parameters count
+						XCTAssertEqual(query.count, 5)  // query parameters count
 						executed()
 						return .empty
 					}

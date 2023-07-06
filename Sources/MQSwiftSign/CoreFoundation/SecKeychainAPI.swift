@@ -47,7 +47,7 @@ extension SecKeychainAPI {
 					nil,
 					&keychainRef
 				)
-					.onFailThrowing(KeychainCreationFailed.error())
+				.onFailThrowing(KeychainCreationFailed.error())
 
 				guard let keychainRef else {
 					throw KeychainCreationFailed.error()
@@ -95,7 +95,7 @@ extension SecKeychainAPI {
 					keychain,
 					&keychainSettings
 				)
-					.onFailThrowing(error)
+				.onFailThrowing(error)
 				Logger.successInfo("Temporary keychain settings set.")
 			}
 
@@ -110,7 +110,7 @@ extension SecKeychainAPI {
 					password,
 					true
 				)
-					.onFailThrowing(error)
+				.onFailThrowing(error)
 				Logger.successInfo("Temporary keychain unlocked.")
 			}
 
@@ -121,7 +121,7 @@ extension SecKeychainAPI {
 				let statusCode = SecKeychainDelete(keychain)
 				guard statusCode == errSecSuccess else {
 					throw
-					KeychainDeletionFailed.error(
+						KeychainDeletionFailed.error(
 							message: "Command 'cleanup' failed - could not delete keychain file"
 						)
 						.with(statusCode.errorMessage, for: "Error description")

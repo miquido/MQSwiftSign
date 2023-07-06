@@ -33,7 +33,7 @@ internal struct FlutterBuildCommand: BuildCommand {
 		}
 		"="
 		Capture {
-			OneOrMore(CharacterClass(.word, .anyOf("./\\")))
+			OneOrMore(CharacterClass(.word, .anyOf("~./\\")))
 			ZeroOrMore {
 				Optionally(CharacterClass(.whitespace, .anyOf("-./")))
 				OneOrMore(.word)
@@ -82,7 +82,7 @@ internal struct IosBuildCommand: BuildCommand {
 		}
 		OneOrMore(.whitespace)
 		Capture {
-			OneOrMore(CharacterClass(.word, .anyOf("./\\")))
+			OneOrMore(CharacterClass(.word, .anyOf("~./\\")))
 			ZeroOrMore {
 				Optionally(CharacterClass(.whitespace, .anyOf("-./")))
 				OneOrMore(.word)

@@ -1,7 +1,8 @@
 import Foundation
 import XCTest
-@testable import MQSwiftSign
 import XcodeProj
+
+@testable import MQSwiftSign
 
 final class DependencyTreeTests: XCTestCase {
 	func test_givenTarget_shouldCreateDependencyTree() {
@@ -41,7 +42,8 @@ final class DependencyTreeTests: XCTestCase {
 	}
 
 	func test_givenTargetWithConfiguration_whenCodeSignIdentityIsMissing_shouldFail() throws {
-		let treeNode = DependencyTree(targetName: "TestTarget", settings: ["DEVELOPMENT_TEAM": "SOME TEAM"], dependencies: [])
+		let treeNode = DependencyTree(
+			targetName: "TestTarget", settings: ["DEVELOPMENT_TEAM": "SOME TEAM"], dependencies: [])
 		assertThrowsError(
 			try treeNode.exportOptionsPlistContent(),
 			ExportPlistContentCreationFailed.error()
@@ -53,7 +55,7 @@ final class DependencyTreeTests: XCTestCase {
 			targetName: "TestTarget",
 			settings: [
 				"DEVELOPMENT_TEAM": "SOME TEAM",
-				"CODE_SIGN_IDENTITY": "SOME IDENTITY"
+				"CODE_SIGN_IDENTITY": "SOME IDENTITY",
 			],
 			dependencies: []
 		)
@@ -67,7 +69,7 @@ final class DependencyTreeTests: XCTestCase {
 			settings: [
 				"DEVELOPMENT_TEAM": "SOME TEAM",
 				"CODE_SIGN_IDENTITY": "SOME IDENTITY",
-				"CODE_SIGN_STYLE": "Manual"
+				"CODE_SIGN_STYLE": "Manual",
 			],
 			dependencies: []
 		)
@@ -88,15 +90,17 @@ final class DependencyTreeTests: XCTestCase {
 			provisioningSpecifier: "PROD specifier",
 			children: [
 				.node(withBundleId: "com.example.notification", provisioningSpecifier: "PROD notification specifier"),
-				.node(withBundleId: "com.example.lib")
+				.node(withBundleId: "com.example.lib"),
 			]
 		)
 
 		let options = try tree.exportOptionsPlistContent()
-		XCTAssertEqual(options.properties[.provisioningProfiles] as! [String: String], [
-			"com.example.main": "PROD specifier",
-			"com.example.notification": "PROD notification specifier"
-		])
+		XCTAssertEqual(
+			options.properties[.provisioningProfiles] as! [String: String],
+			[
+				"com.example.main": "PROD specifier",
+				"com.example.notification": "PROD notification specifier",
+			])
 	}
 }
 

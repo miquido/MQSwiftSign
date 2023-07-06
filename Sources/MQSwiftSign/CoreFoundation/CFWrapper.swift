@@ -18,7 +18,7 @@ struct CFWrapper<T: CFWrappable> {
 }
 
 extension CFWrapper: Equatable {
-	static func ==(lhs: CFWrapper<T>, rhs: CFWrapper<T>) -> Bool {
+	static func == (lhs: CFWrapper<T>, rhs: CFWrapper<T>) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 }

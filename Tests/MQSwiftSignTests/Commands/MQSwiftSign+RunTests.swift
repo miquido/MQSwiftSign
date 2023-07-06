@@ -1,4 +1,5 @@
 import Foundation
+
 @testable import MQSwiftSign
 
 final class MQSwiftSign_Run_Tests: FeatureTests {
@@ -40,7 +41,9 @@ final class MQSwiftSign_Run_Tests: FeatureTests {
 			},
 			throws: ExportPlistCreationFailed.self,
 			execute: { features in
-				var sut = try MQSwiftSign.Run.parse([self.mockedCertificate, "--shell-script", "echo \"OK\"", "--distribution-method", "invalid"])
+				var sut = try MQSwiftSign.Run.parse([
+					self.mockedCertificate, "--shell-script", "echo \"OK\"", "--distribution-method", "invalid",
+				])
 				try sut.run(features)
 			}
 		)
@@ -72,7 +75,9 @@ final class MQSwiftSign_Run_Tests: FeatureTests {
 			},
 			executedPrepared: 1,
 			execute: { features in
-				var sut = try MQSwiftSign.Run.parse([self.mockedCertificate, "--shell-script", "echo \"OK\"", "--distribution-method", "app-store"])
+				var sut = try MQSwiftSign.Run.parse([
+					self.mockedCertificate, "--shell-script", "echo \"OK\"", "--distribution-method", "app-store",
+				])
 				try sut.run(features)
 			}
 		)
@@ -130,7 +135,9 @@ final class MQSwiftSign_Run_Tests: FeatureTests {
 			},
 			throws: NoSuchFile.self,
 			execute: { features in
-				var sut = try MQSwiftSign.Run.parse([self.mockedCertificate, "--shell-script", "echo \"OK\"", "--distribution-method", "app-store"])
+				var sut = try MQSwiftSign.Run.parse([
+					self.mockedCertificate, "--shell-script", "echo \"OK\"", "--distribution-method", "app-store",
+				])
 				try sut.run(features)
 			}
 		)
@@ -195,7 +202,6 @@ struct CommandMock: MQSwiftSignCommand {
 		try run(features)
 	}
 }
-
 
 private extension MQSwiftSign_Run_Tests {
 	var mockedCertificate: String {

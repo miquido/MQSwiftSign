@@ -17,7 +17,7 @@ internal extension ProvisioningInstaller {
 			return try URL(path: currentDirectory + "/\(path)")
 		} catch {
 			throw
-			NoSuchFile.error(
+				NoSuchFile.error(
 					message: "File not found at given path",
 					possibleReasons: [.wrongProvisioningPath],
 					displayableMessage: "File doesn't exist"
@@ -60,7 +60,6 @@ extension ProvisioningInstaller {
 		}
 	}
 }
-
 
 internal extension ProvisioningInstaller {
 

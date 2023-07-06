@@ -1,8 +1,8 @@
-import XcodeProj
 import PathKit
+import XcodeProj
 
 extension XcodeProj {
-	static var sample: XcodeProj {
+	static var sample_xcodeproj: XcodeProj {
 		let workspace = XCWorkspace()
 		let configurationList = XCConfigurationList(buildConfigurations: [])
 		let mainGroup = PBXGroup(children: [])
@@ -15,15 +15,35 @@ extension XcodeProj {
 
 		let pbxproj = PBXProj(rootObject: rootObject, objects: [rootObject, mainGroup, configurationList])
 		let sharedData = XCSharedData(schemes: [])
-		return try! XcodeProj(workspace: workspace, pbxproj: pbxproj, sharedData: sharedData)
+		return XcodeProj(workspace: workspace, pbxproj: pbxproj, sharedData: sharedData)
 	}
 
-	func write(atProjectPath path: Path) {
-		try! write(path: path, override: true)
+	static var sample_xcworkspace: XCWorkspace {
+		let workspace = XCWorkspace()
+		workspace.data.children = [
+			.file(.init(location: .group(projectTestPath().string))),
+			.file(.init(location: .group("Pods/Pods.xcodeproj"))),
+		]
+		return workspace
 	}
 
-	func write(atWorkspacePath path: Path) {
-		try! workspace.write(path: path)
-		try! pbxproj.write(path: path + "project.pbxproj", override: true)
+	static func pathForTest() -> Path {
+		Path(#file).parent()
+	}
+
+	static func projectFileName() -> String {
+		"TestProject.xcodeproj"
+	}
+
+	static func projectTestPath() -> Path {
+		pathForTest() + projectFileName()
+	}
+
+	static func workspaceFileName() -> String {
+		"TestWorkspace.xcworkspace"
+	}
+
+	static func workspaceTestPath() -> Path {
+		pathForTest() + workspaceFileName()
 	}
 }

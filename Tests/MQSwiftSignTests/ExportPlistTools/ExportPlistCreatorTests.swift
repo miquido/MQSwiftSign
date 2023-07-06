@@ -1,9 +1,11 @@
-@testable import MQSwiftSign
 import MQAssert
+
+@testable import MQSwiftSign
 
 final class ExportPlistCreatorTests: FeatureTests {
 	func test_givenExtractedOptions_shouldPassOptionsToWriter() async throws {
-		let context = PlistCreator.Context(distributionMethod: .development, shellScript: "-project TestProject.xcodeproj -scheme AppWithExtensions")
+		let context = PlistCreator.Context(
+			distributionMethod: .development, shellScript: "-project TestProject.xcodeproj -scheme AppWithExtensions")
 		await test(
 			ExportPlistCreator.loader(),
 			context: context,
@@ -23,12 +25,12 @@ final class ExportPlistCreatorTests: FeatureTests {
 				patches(
 					patch: \ExportOptionsExtractor.extract,
 					with: {
-							ExportOptionsPlist(properties: [
-								.method: "development",
-								.signingStyle: "manual",
-								.signingCertificate: "Apple Development",
-								.teamID: "DEVELOPMENT_TEAM_IDENTIFIER",
-							]
+						ExportOptionsPlist(properties: [
+							.method: "development",
+							.signingStyle: "manual",
+							.signingCertificate: "Apple Development",
+							.teamID: "DEVELOPMENT_TEAM_IDENTIFIER",
+						]
 						)
 					}
 				)
@@ -40,7 +42,9 @@ final class ExportPlistCreatorTests: FeatureTests {
 	}
 
 	func test_givenOptions_shouldConvertToRawTypes() {
-		let options = ExportOptionsPlist(properties: [.method: "development", .provisioningProfiles: ["App": "Profile"]])
+		let options = ExportOptionsPlist(properties: [
+			.method: "development", .provisioningProfiles: ["App": "Profile"],
+		])
 		let rawOptions = options.convertKeysToRawTypes()
 		XCTAssertEqual(rawOptions["method"] as! String, "development")
 		XCTAssertEqual(rawOptions["provisioningProfiles"] as! [String: String], ["App": "Profile"])
