@@ -27,7 +27,11 @@ The same rule applies to provided provisioning profiles - if using the tool with
 
 For your convenience, we packed the usage of the tool into the [makefile](./Makefile) and bundled it up with most common use cases of the tool. It covers binary building, unit tests, app building & uploading it to Testflight.
 
-The makefile is prepared to run on any macOS with Xcode installed. The only thing to be done is to provide required variables, and you are ready to go! 
+All configuration is done inside [project.env](./project.env) file.
+
+Simply copy `Makefile` and `project.env` to your project directory, update properties in `project.env`, and you are ready to go! 
+
+The makefile is prepared to run on any macOS with Xcode installed.
 
 ### Package or executable?
 
