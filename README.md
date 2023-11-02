@@ -12,7 +12,7 @@ The main uses of this tool are CI systems, but you can use it as well on your da
 	- Create temporary keychain with specified name, unlocked and with password prompt turned off.
 	- Install certificate into just created keychain.
 	- Add temporary keychain to the keychain searchlist.
-	- Set up proper access options for the certificate.
+	- Set up proper access options for the certificate and its private key.
 2. Installation of any provisioning profile found in specified path, making it visible for Xcode. See [installing provisioning profiles](#installing-provisioning-profiles) for more information.
 3. Execution of a provided shell script.
 4. Composition of an export plist from build options provided in shell script. See [creating options plist](#creating-export-plist) for more information.
@@ -20,16 +20,16 @@ The main uses of this tool are CI systems, but you can use it as well on your da
 
 Basically, it does the same work as `fastlane match`, but stripped of unnecessary bloatware and rubygem dependencies, making it swift and clean.
 
-> NOTE: It is your responsibility to provide proper certificate for the build. The tool doesn't check if the certificate you're trying to import matches your build type; If you're trying to codesign e.g. Testflight build using development certificate, be aware that build will fail on the codesign step. Check in Xcode which certificate you use for particular build configuration and export it. 
+> NOTE: It is your responsibility to provide proper signing identity for the build. The tool doesn't check if the certificate or private key you're trying to import matches your build type; If you're trying to codesign e.g. Testflight build using development identity, be aware that build will fail on the codesign step. Check in Xcode which signing identity you use for particular build configuration and export it. 
 The same rule applies to provided provisioning profiles - if using the tool with --provisioningPath option, profiles have to match selected project configuration, because the tool will just install any profile contained in provided directory. If wrong provisioning profile is provided, the build command will fail as well.
 
 ## Usage
 
-For your convenience, we packed the usage of the tool into the [makefile](./Makefile) and bundled it up with most common use cases of the tool. It covers binary building, unit tests, app building & uploading it to Testflight.
+For your convenience, we packed the usage of the tool into the [makefile](./Makefile) and bundled it up with most common use cases of the tool. It covers executable building, unit tests, app building & uploading it to Testflight.
 
 All configuration is done inside [project.env](./project.env) file.
 
-Simply copy `Makefile` and `project.env` to your project directory, update properties in `project.env`, and you are ready to go! 
+Simply copy the executable along `Makefile` and `project.env` to your project directory, update properties in `project.env`, and you are ready to go! 
 
 The makefile is prepared to run on any macOS with Xcode installed.
 
@@ -37,9 +37,11 @@ The makefile is prepared to run on any macOS with Xcode installed.
 
 You can use the tool as swift package or as standalone binary. The standalone binary is recommended way, and all examples are set up with assumption that you use standalone binary.
 
-To build a standalone binary, run `make build_universal_binary` in the main directory. This will build a binary and place it in the main directory (under `./MQSwiftSign`). Note that this action will build a fat binary, which will run on both Intel and Apple Sillicon processors. If you don't need a fat binary, just strip unnecessary arch from `build_universal_binary` action.
+To build a standalone binary, clone this repository and run `make build_universal_binary` in main directory. This will build an executable and place it under `./MQSwiftSign`. You can then copy it into your project.
 
-However, if you find yourself in need of swift package use (e.g. you have to customize its behavior, or incorporate it into your custom swift package setup) then replace in examples `./MQSwiftSign` with `swift run --package-path <path_to_MQSwiftSign>`.
+Note that this action will build a fat binary, which will run on both Intel and Apple Sillicon processors. If you don't need a fat binary, just strip unnecessary arch from `build_universal_binary` action. 
+
+However, if you find yourself in need of Swift package use (e.g. you have to customize its behavior, or incorporate it into your custom swift package setup) then replace in examples `./MQSwiftSign` with `swift run --package-path <path_to_MQSwiftSign>`.
 
 
 ### Detailed usage
@@ -169,14 +171,15 @@ For `xcodebuild` command, it must contain the following parameters:
 - `-project` or `-workspace` in order to fetch project/workspace content like targets and dependencies
 - either `-scheme` or `-target` in order to fetch build settings (sign style, team ID, provisioning profile specifiers etc.) based on the given configuration - if configuration is not provided, the default one will be inferred
 - `-exportOptionsPlist` for fetching the path at which the export plist file should be saved.
-- an optional `-sdk` if the project has multiple destination platforms (iOS, iPadOS, tvOS)
-For the `flutter build` command, tool anticipates the default scheme and target name for iOS builds (which is `Runner`) and executes similar actions as in `xcodebuild` case.
+- an optional `-sdk` if the project has multiple destination platforms (iOS, iPadOS, tvOS).
 
-The tool supports nested dependencies - meaning, if your project uses separate app extension (for WatchOS, Rich Notifications etc.) the output plist will support it.
+For the `flutter build` command, the tool anticipates the default scheme and target name for iOS builds (which is `Runner`) and executes similar actions as in `xcodebuild` case.
 
-If needed (see the above conditions) MQSwiftSign tries in first place to create the export option plist and then runs the given `--shell-script`. This way, while executing the build command, the export option plist is already created and saved at the specified path.   
+The tool supports nested dependencies - meaning that, if your project uses separate app extension (for watchOS, rich notifications etc.) the output plist will support it.
 
-Note that this parameter is only available when using makefile's actions. When using subcommands, the tool has no project configuration context to create a plist from.
+If needed (see the above conditions) MQSwiftSign tries to create the export option plist and then runs the given `--shell-script` in first place. This way, while executing the build command, the export option plist is already created and saved at the specified path.   
+
+Note that this feature is only available when using makefile's actions. When using commands directly, the tool has no project configuration context to create a plist from.
 
 ## License
 
