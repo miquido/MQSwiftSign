@@ -17,11 +17,11 @@ let package = Package(
 			targets: ["MQSwiftSignC"])
 	],
 	dependencies: [
-		.package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0"),
+		.package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
         .package(url: "https://github.com/miquido/MQTagged", .upToNextMinor(from: "0.1.0")),
         .package(url: "https://github.com/miquido/MQ-iOS.git", .upToNextMinor(from: "0.12.0")),
         .package(url: "https://github.com/miquido/MQDo", .upToNextMinor(from: "0.11.0")),
-		.package(url: "https://github.com/tuist/XcodeProj.git", .upToNextMajor(from: "8.9.0")),
+		.package(url: "https://github.com/tuist/XcodeProj.git", .upToNextMajor(from: "8.24.0")),
 		.package(url: "https://github.com/apple/swift-format", branch: "main")
 	],
 	targets: [
