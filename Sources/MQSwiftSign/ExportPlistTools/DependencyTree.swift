@@ -1,3 +1,5 @@
+import Foundation
+import PathKit
 import XcodeProj
 
 struct DependencyTree {
@@ -50,21 +52,5 @@ struct DependencyTree {
 					partial[next.bundle.value] = next.provisioning.rawValue
 				}
 		}
-	}
-}
-
-extension PBXTarget {
-	func dependencyTree(usingConfiguration configurationName: ConfigurationName) -> DependencyTree {
-		let dependencyTrees: [DependencyTree]
-		dependencyTrees = dependencies.compactMap { dependency -> DependencyTree? in
-			dependency.target?.dependencyTree(usingConfiguration: configurationName)
-		}
-		let buildSettings: BuildSettings
-		if let configuration = buildConfigurationList?.configuration(name: configurationName.rawValue) {
-			buildSettings = configuration.buildSettings
-		} else {
-			buildSettings = [:]
-		}
-		return DependencyTree(targetName: name, settings: buildSettings, dependencies: dependencyTrees)
 	}
 }

@@ -7,5 +7,6 @@ extension FeaturesRegistry {
 		use(ExportOptionsExtractor.xcodeProj())
 		use(XcodeProjOptionsExtractor.live())
 		use(XcodeProjFinder.live())
+        use(DependencyTreeBuilder.live())
 	}
 }

@@ -32,6 +32,17 @@ internal struct ExportOptionsPlist {
 	internal func convertKeysToRawTypes() -> Dictionary<String, Any> {
 		return Dictionary(uniqueKeysWithValues: properties.map { key, value in (key.rawValue, value) })
 	}
+    
+    internal func validate() throws {
+        for (key, value) in properties {
+            guard let stringValue = value as? String else { continue }
+            let regex = try? NSRegularExpression(pattern: #"\$\((.*?)\)"#, options: [])
+            let matches = regex?.matches(in: stringValue, options: [], range: NSRange(location: 0, length: stringValue.utf16.count)) ?? []
+            if matches.count > 0 {
+                throw ExportPlistValidationFailed.error(hintMessage: "Plist entry value for key \(key) contains unresolved variable: \(stringValue)")
+            }
+        }
+    }
 }
 
 internal enum ExportPlistOption: String {

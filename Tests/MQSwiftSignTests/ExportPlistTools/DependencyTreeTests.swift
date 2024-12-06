@@ -1,38 +1,12 @@
 import Foundation
+import PathKit
 import XCTest
 import XcodeProj
 
 @testable import MQSwiftSign
 
 final class DependencyTreeTests: XCTestCase {
-	func test_givenTarget_shouldCreateDependencyTree() {
-		let target = PBXTarget(name: "TestTarget")
-		let dependencyTarget = PBXTarget(name: "DependencyTarget")
-		let dependency = PBXTargetDependency(name: dependencyTarget.name, target: dependencyTarget)
-		target.dependencies.append(dependency)
-
-		let tree = target.dependencyTree(usingConfiguration: "")
-		XCTAssertEqual(tree.targetName, "TestTarget")
-		XCTAssertEqual(tree.dependencies.count, 1)
-		XCTAssertEqual(tree.dependencies[0].targetName, "DependencyTarget")
-	}
-
-	func test_targetWithoutConfiguration_shouldHaveEmptyBuildSettings() {
-		let target = PBXTarget(name: "TestTarget")
-		let tree = target.dependencyTree(usingConfiguration: "Release")
-		XCTAssertTrue(tree.settings.isEmpty)
-	}
-
-	func test_targetWithConfiguration_shouldHaveBuildSettings() {
-		let target = PBXTarget(name: "TestTarget")
-		let configuration = XCBuildConfiguration(name: "TestConfiguration")
-		configuration.buildSettings = ["TestSetting": "TestValue"]
-		let configurationList = XCConfigurationList(buildConfigurations: [configuration])
-		target.buildConfigurationList = configurationList
-		let tree = target.dependencyTree(usingConfiguration: "TestConfiguration")
-		XCTAssertEqual(tree.settings as? [String: String], ["TestSetting": "TestValue"])
-	}
-
+    
 	func test_givenTargetWithConfiguration_whenDevelopmentTeamIsMissing_shouldFail() throws {
 		let treeNode = DependencyTree(targetName: "TestTarget", settings: [:], dependencies: [])
 		assertThrowsError(

@@ -9,9 +9,9 @@ extension XcodeProj {
 		let rootObject = PBXProject(
 			name: "Test",
 			buildConfigurationList: configurationList,
-            compatibilityVersion: "Xcode 16.1",
-            preferredProjectObjectVersion: 77,
-            minimizedProjectReferenceProxies: nil,
+			compatibilityVersion: "Xcode 16.1",
+			preferredProjectObjectVersion: 77,
+			minimizedProjectReferenceProxies: nil,
 			mainGroup: mainGroup
 		)
 

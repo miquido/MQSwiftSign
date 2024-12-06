@@ -2,33 +2,6 @@ import Foundation
 import MQDo
 import XcodeProj
 
-extension ExportOptionsExtractor {
-	static func xcodeProj() -> FeatureLoader {
-		.disposable { buildOptions, features in
-			ExportOptionsExtractor(
-				extract: {
-					let projectPath: String? = buildOptions[.projectPath]
-					let workspacePath: String? = buildOptions[.workspacePath]
-					let xcodeProj: XcodeProj
-					if let pPath = projectPath {
-						xcodeProj = try XcodeProj(pathString: pPath)
-					} else if let wPath = workspacePath {
-						xcodeProj = try XcodeProj(workspacePath: wPath)
-					} else {
-						throw ExportPlistContentCreationFailed.error(
-							message:
-								"No -workspace nor -project options were provided in build command. ExportPlist generator cannot proceed."
-						)
-					}
-					let extractor: XcodeProjOptionsExtractor = try features.instance(
-						context: .init(xcodeProj: xcodeProj, options: buildOptions))
-					return try extractor.extract()
-				}
-			)
-		}
-	}
-}
-
 struct XcodeProjOptionsExtractor {
 	var extract: () throws -> ExportOptionsPlist
 
@@ -51,6 +24,7 @@ extension XcodeProjOptionsExtractor {
 		.disposable { context, features -> XcodeProjOptionsExtractor in
 			func extract() throws -> ExportOptionsPlist {
 				let worker: XcodeProjFinder = try features.instance(context: context.xcodeProj)
+                let dependencyTreeBuilder: DependencyTreeBuilder = try features.instance()
 				let target: PBXTarget
 				let configurationName: ConfigurationName
 
@@ -64,8 +38,10 @@ extension XcodeProjOptionsExtractor {
 					target = try worker.findRootTarget(in: scheme)
 				}
 
-				let dependencyTree = target.dependencyTree(usingConfiguration: configurationName)
-				return try dependencyTree.exportOptionsPlistContent()
+                let dependencyTree = try dependencyTreeBuilder.build(target, configurationName)
+				let exportPlist = try dependencyTree.exportOptionsPlistContent()
+                try exportPlist.validate()
+                return exportPlist
 			}
 
 			return XcodeProjOptionsExtractor(
